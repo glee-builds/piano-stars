@@ -27,6 +27,7 @@ let state = load();
 let screen = "home";
 let justOpened = null; // what was inside the gift that was just opened
 let justChecked = null; // the item that was just checked, so its box can pop
+let sceneNote = ""; // how to unlock the locked picture that was just tapped
 let sceneHop = null; // the key of a placed sticker that was just tapped, so it can hop once
 let sceneSelected = null; // the key of the sticker picked on the scene, if any
 let practiceOn = null; // an earlier day being recorded or changed; null means today
@@ -50,6 +51,7 @@ function go(name) {
     restoreDraft = null;
     practiceOn = null;
     sceneSelected = null;
+    sceneNote = "";
     // A day that was started but left with nothing checked is put away.
     if (state.week && dropEmptyDays(state.week) !== state.week) update({ week: dropEmptyDays(state.week) });
   }
@@ -85,6 +87,7 @@ function icon(name) {
     history: "M5 6h14v14H5zM5 10.500h14M9 3.500V7M15 3.500V7M9 14.500l2 2 4-4",
     album: "M5 5h14v9l-5 5H5zM14 19v-5h5",
     scene: "M4 6h16v12H4zM4 16l5-5 4 4 3-3 4 4",
+    lock: "M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5z",
   };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -578,6 +581,9 @@ function giftScreen() {
       el("div", { class: "reveal" }, stickerArt(inside.sticker, inside.shiny)),
       el("h1", {}, inside.sticker.name),
       el("p", {}, `It's in the ${set.name} page of your album.`),
+      // The sticker that completes a set also opens that set's scene picture.
+      BACKDROPS.filter((entry) => entry.needs === set.id && unlocked(entry)).map((entry) =>
+        el("p", { class: "done-note" }, icon("star"), ` You found every ${set.name} sticker. The ${entry.name} picture is now open in My scene.`)),
       next)];
   }
 
@@ -1078,8 +1084,65 @@ const BACKDROPS = [
   <path d="M0 0h400v26c-34 16-66 16-100 0-34 16-66 16-100 0-34 16-66 16-100 0-34 16-66 16-100 0z" fill="#b8324c"/>
   <path d="M0 232h400v68H0z" fill="url(#boards)"/>
   <g stroke="#7a4a22" stroke-width="1.500" opacity="0.600"><path d="M0 254h400M0 278h400"/></g>` },
+  // The pictures below are prizes: each opens when every sticker in the
+  // set named by `needs` (a set id from data/stickers.js) has been found.
+  { id: "moon", name: "Moon", needs: "space", art: `
+  <defs>${fade("void", "#05041a", "#17123f")}${fade("dust", "#c9c6d8", "#8b879f")}
+    <radialGradient id="earth" cx="0.350" cy="0.300" r="0.800"><stop offset="0" stop-color="#7fd4f5"/><stop offset="1" stop-color="#1f5fb0"/></radialGradient></defs>
+  <rect width="400" height="300" fill="url(#void)"/>
+  ${dots([[26, 30, 1.4, 0.9], [64, 96, 1, 0.6], [110, 44, 1.2, 0.8], [158, 120, 1, 0.5], [196, 26, 1.5, 0.9], [236, 88, 1, 0.6], [330, 130, 1.2, 0.7], [372, 34, 1.3, 0.8], [18, 150, 1, 0.5], [286, 160, 1, 0.5]])}
+  <circle cx="300" cy="70" r="36" fill="url(#earth)"/><path d="M280 56c10-8 22-4 24 6s-12 10-16 18-14-6-8-24zM312 84c8-4 14 2 10 10s-12 2-10-10z" fill="#6fcf8a"/>
+  <path d="M0 214C60 196 130 206 200 200S330 190 400 208V300H0z" fill="url(#dust)"/>
+  <g fill="#77738c" opacity="0.600"><ellipse cx="70" cy="244" rx="30" ry="8"/><ellipse cx="190" cy="270" rx="40" ry="9"/><ellipse cx="300" cy="238" rx="24" ry="6"/><ellipse cx="358" cy="276" rx="20" ry="5"/><ellipse cx="130" cy="222" rx="14" ry="4"/></g>` },
+  { id: "jungle", name: "Jungle", needs: "animals", art: `
+  <defs>${fade("canopy", "#bff0c8", "#5fc98a", "#2f9a6a")}${fade("leaf", "#2f9a5c", "#176b45")}${fade("floor", "#4fb36a", "#237a4c")}</defs>
+  <rect width="400" height="300" fill="url(#canopy)"/>
+  <g fill="#ffffff" opacity="0.250"><path d="M150 0l-40 220h50zM250 0l10 220h50z"/></g>
+  <g fill="#3fae6c" opacity="0.700"><circle cx="40" cy="120" r="60"/><circle cx="140" cy="100" r="50"/><circle cx="270" cy="110" r="56"/><circle cx="370" cy="130" r="58"/></g>
+  <g fill="url(#leaf)"><path d="M0 0h90c-10 40-40 70-90 80zM400 0h-90c10 40 40 70 90 80z"/><path d="M0 110c40 10 60 40 60 80-30-4-50-20-60-40zM400 110c-40 10-60 40-60 80 30-4 50-20 60-40z"/></g>
+  <path d="M110 0c4 40-6 70 2 100M300 0c-4 50 8 80 0 120" fill="none" stroke="#176b45" stroke-width="4" stroke-linecap="round"/>
+  <path d="M0 236C70 214 150 232 230 224S340 214 400 230V300H0z" fill="url(#floor)"/>` },
+  { id: "field", name: "Stadium", needs: "sports", art: `
+  <defs>${fade("noon", "#5ab4f0", "#c8ebfc")}${fade("stands", "#5a4cc4", "#3b3190")}${fade("pitch", "#5fc46e", "#2f9a50")}</defs>
+  <rect width="400" height="300" fill="url(#noon)"/>
+  <g fill="#ffffff" opacity="0.900"><ellipse cx="90" cy="40" rx="30" ry="10"/><ellipse cx="300" cy="56" rx="36" ry="11"/></g>
+  <path d="M0 110q200-34 400 0v70H0z" fill="url(#stands)"/>
+  ${dots([[30, 130, 3, 0.5], [60, 122, 3, 0.7], [92, 128, 3, 0.5], [124, 118, 3, 0.7], [156, 124, 3, 0.5], [188, 116, 3, 0.7], [220, 122, 3, 0.5], [252, 118, 3, 0.7], [284, 126, 3, 0.5], [316, 122, 3, 0.7], [348, 130, 3, 0.5], [376, 128, 3, 0.7], [46, 152, 3, 0.6], [110, 146, 3, 0.5], [174, 142, 3, 0.6], [238, 144, 3, 0.5], [302, 148, 3, 0.6], [362, 154, 3, 0.5]])}
+  <rect y="172" width="400" height="128" fill="url(#pitch)"/>
+  <g fill="#ffffff" opacity="0.100"><rect x="50" y="172" width="50" height="128"/><rect x="150" y="172" width="50" height="128"/><rect x="250" y="172" width="50" height="128"/><rect x="350" y="172" width="50" height="128"/></g>
+  <g fill="none" stroke="#ffffff" stroke-width="3" opacity="0.800"><path d="M0 190h400M200 190v110"/><ellipse cx="200" cy="246" rx="46" ry="20"/></g>` },
+  { id: "city", name: "City", needs: "places", art: `
+  <defs>${fade("sunset", "#2b1d6e", "#a2489c", "#ff9a6b", "#ffd08a")}${fade("far", "#6a4aa8", "#4a3488")}${fade("near", "#2a2060", "#17123f")}</defs>
+  <rect width="400" height="300" fill="url(#sunset)"/>
+  <circle cx="200" cy="196" r="44" fill="#ffe9a8" opacity="0.900"/>
+  <path d="M0 300V170h30v-30h34v44h26v-70h40v84h24v-40h36v56h30v-96h38v80h26v-50h36v70h30v-40h50v132z" fill="url(#far)"/>
+  <path d="M0 300V214h44v-36h40v60h30v-80h46v96h36v-50h40v40h34v-84h44v70h36v-30h50v100z" fill="url(#near)"/>
+  <g fill="#ffd95a" opacity="0.850"><rect x="54" y="190" width="6" height="8"/><rect x="68" y="190" width="6" height="8"/><rect x="54" y="208" width="6" height="8"/><rect x="124" y="170" width="6" height="8"/><rect x="140" y="188" width="6" height="8"/><rect x="124" y="206" width="6" height="8"/><rect x="208" y="218" width="6" height="8"/><rect x="278" y="174" width="6" height="8"/><rect x="294" y="192" width="6" height="8"/><rect x="278" y="210" width="6" height="8"/><rect x="330" y="236" width="6" height="8"/><rect x="368" y="224" width="6" height="8"/></g>
+  <rect y="278" width="400" height="22" fill="#0f0b2e"/>` },
+  { id: "keys", name: "Piano", needs: "music", art: `
+  <defs>${fade("keys-glow", "#3a1a7a", "#7a3fc0", "#ff8fb8")}${fade("ivory", "#ffffff", "#e6e0f5")}</defs>
+  <rect width="400" height="300" fill="url(#keys-glow)"/>
+  ${dots([[40, 30, 1.4, 0.8], [130, 60, 1, 0.6], [220, 26, 1.3, 0.8], [310, 70, 1, 0.6], [372, 30, 1.4, 0.8]])}
+  <g fill="none" stroke="#ffffff" stroke-width="2" opacity="0.350"><path d="M0 70q100-30 200 0t200 0M0 86q100-30 200 0t200 0M0 102q100-30 200 0t200 0M0 118q100-30 200 0t200 0M0 134q100-30 200 0t200 0"/></g>
+  <g fill="#ffd95a"><ellipse cx="80" cy="96" rx="10" ry="7" transform="rotate(-20 80 96)"/><rect x="88" y="50" width="3" height="46"/><ellipse cx="300" cy="118" rx="10" ry="7" transform="rotate(-20 300 118)"/><rect x="308" y="72" width="3" height="46"/></g>
+  <rect y="214" width="400" height="86" fill="url(#ivory)"/>
+  <g stroke="#b9b2d6" stroke-width="2"><path d="M50 214v86M100 214v86M150 214v86M200 214v86M250 214v86M300 214v86M350 214v86"/></g>
+  <g fill="#231d5c"><rect x="36" y="214" width="28" height="52" rx="3"/><rect x="86" y="214" width="28" height="52" rx="3"/><rect x="186" y="214" width="28" height="52" rx="3"/><rect x="236" y="214" width="28" height="52" rx="3"/><rect x="286" y="214" width="28" height="52" rx="3"/></g>` },
+  { id: "road", name: "Road", needs: "wheels", art: `
+  <defs>${fade("morning", "#7cc8f5", "#d6f0fc")}${fade("meadow-far", "#8fd18a", "#5fb96a")}${fade("meadow", "#6fc66e", "#3f9a50")}
+    <radialGradient id="morning-sun"><stop offset="0" stop-color="#fff3b0" stop-opacity="0.800"/><stop offset="1" stop-color="#fff3b0" stop-opacity="0"/></radialGradient></defs>
+  <rect width="400" height="300" fill="url(#morning)"/>
+  <circle cx="320" cy="60" r="52" fill="url(#morning-sun)"/><circle cx="320" cy="60" r="22" fill="#ffd95a"/>
+  <g fill="#ffffff" opacity="0.900"><ellipse cx="90" cy="50" rx="34" ry="11"/><ellipse cx="116" cy="42" rx="20" ry="11"/><ellipse cx="210" cy="84" rx="24" ry="8"/></g>
+  <path d="M0 176C70 140 140 150 210 170S330 150 400 172V300H0z" fill="url(#meadow-far)"/>
+  <path d="M0 214C80 190 160 206 240 200S340 190 400 204V300H0z" fill="url(#meadow)"/>
+  <path d="M150 300C170 250 250 240 240 210S190 186 214 168l12 2C210 190 280 196 284 226S250 270 270 300z" fill="#5d5a72"/>
+  <path d="M210 300C226 256 266 246 262 218S206 192 220 170" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="10 10" opacity="0.800"/>` },
 ];
-const backdrop = () => BACKDROPS.find((entry) => entry.id === state.backdrop) || BACKDROPS[0];
+// A picture with `needs` is open once every sticker in that set is in the album.
+const setFor = (entry) => SETS.find((set) => set.id === entry.needs);
+const unlocked = (entry) => !entry.needs || setFor(entry).stickers.every((sticker) => state.owned[sticker.id]);
+const backdrop = () => BACKDROPS.find((entry) => entry.id === state.backdrop && unlocked(entry)) || BACKDROPS[0];
 
 // One sticker on the scene. It can be dragged with a finger or mouse, or
 // moved with the arrow keys. A tap picks it, so the buttons below act on it.
@@ -1169,11 +1232,22 @@ function sceneScreen() {
           ? "Drag a sticker to move it. Tap one to resize, flip, or turn it, or to take it off."
           : "Tap a sticker below to put it on the picture."),
     el("div", { class: "chips", role: "group", "aria-label": "Picture" }, BACKDROPS.map((entry) =>
-      el("button", {
-        class: `chip ${entry.id === backdrop().id ? "chip-on" : ""}`, type: "button",
-        "aria-pressed": String(entry.id === backdrop().id),
-        onClick: () => { update({ backdrop: entry.id }); render(); },
-      }, entry.name))),
+      unlocked(entry)
+        ? el("button", {
+            class: `chip ${entry.id === backdrop().id ? "chip-on" : ""}`, type: "button",
+            "aria-pressed": String(entry.id === backdrop().id),
+            onClick: () => { sceneNote = ""; update({ backdrop: entry.id }); render(); },
+          }, entry.name)
+        : el("button", {
+            class: "chip chip-locked", type: "button", "aria-label": `${entry.name}, locked`,
+            onClick: () => {
+              const set = setFor(entry);
+              const have = set.stickers.filter((sticker) => state.owned[sticker.id]).length;
+              sceneNote = `Find every ${set.name} sticker to open the ${entry.name} picture. You have ${have} of ${set.stickers.length}.`;
+              render();
+            },
+          }, icon("lock"), ` ${entry.name}`))),
+    el("p", { class: "label", role: "status" }, sceneNote),
     el("section", { class: "card" },
       el("h2", {}, "Your stickers"),
       mine.length === 0 && el("p", {}, "Open a gift to get your first sticker."),

@@ -203,6 +203,7 @@ textarea, .text-input {
 }
 
 .chip-on { background: var(--main); color: #ffffff; }
+.chip-locked { border-style: dashed; border-color: var(--line); background: var(--card); color: var(--ink-soft); }
 
 /* Gifts and stickers. */
 .gift-button { border: none; background: none; padding: 12px; cursor: pointer; border-radius: 24px; }
