@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MAX_ON_SCENE, addToScene, moveInScene, resizeInScene, removeFromScene } from "../src/scene.js";
+import { MAX_ON_SCENE, addToScene, moveInScene, resizeInScene, removeFromScene, flipInScene, turnInScene } from "../src/scene.js";
 
 test("adding a sticker gives it its own key and a place inside the picture", () => {
   let scene = addToScene([], "space-rocket");
@@ -37,4 +37,19 @@ test("size stays between small and big", () => {
   assert.equal(scene[0].size, 3);
   scene = resizeInScene(resizeInScene(resizeInScene(resizeInScene(scene, 1, -1), 1, -1), 1, -1), 1, -1);
   assert.equal(scene[0].size, 1);
+});
+
+test("flipping twice puts a sticker back, and only the chosen one changes", () => {
+  let scene = addToScene(addToScene([], "a"), "b");
+  scene = flipInScene(scene, 1);
+  assert.deepEqual(scene.map((item) => Boolean(item.flip)), [true, false]);
+  assert.equal(Boolean(flipInScene(scene, 1)[0].flip), false);
+});
+
+test("turning goes round in steps and comes back upright", () => {
+  let scene = addToScene([], "a");
+  scene = turnInScene(scene, 1);
+  assert.equal(scene[0].turn, 30);
+  for (let i = 0; i < 11; i++) scene = turnInScene(scene, 1);
+  assert.equal(scene[0].turn, 0);
 });
