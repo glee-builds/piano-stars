@@ -1026,8 +1026,16 @@ function addDayScreen() {
 // How wide a sticker is on the scene, as a percent of the picture, by size.
 const SCENE_WIDTHS = { 1: 13, 2: 19, 3: 27 };
 
-// The picture behind the stickers: dusk over rolling hills.
-const SCENE_BACKDROP = `<svg class="scene-back" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+// A top-to-bottom color fade for a backdrop: fade("sea", "#fff", "#000").
+const fade = (id, ...colors) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">`
+  + colors.map((color, n) => `<stop offset="${n / (colors.length - 1)}" stop-color="${color}"/>`).join("") + `</linearGradient>`;
+const dots = (list) => `<g fill="#ffffff">` + list.map(([x, y, r, o]) => `<circle cx="${x}" cy="${y}" r="${r}" opacity="${o}"/>`).join("") + `</g>`;
+
+// The pictures the player can choose to put stickers on. Each is drawn on a
+// 400 by 300 grid. The first one is used until another is picked. Ids are
+// saved on the device, so don't change them.
+const BACKDROPS = [
+  { id: "hills", name: "Hills", art: `
   <defs>
     <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1650"/><stop offset="0.550" stop-color="#4b3aa8"/><stop offset="0.850" stop-color="#e58aa6"/><stop offset="1" stop-color="#ffc98a"/></linearGradient>
     <linearGradient id="hill-far" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a48b8"/><stop offset="1" stop-color="#3c2f8c"/></linearGradient>
@@ -1040,8 +1048,37 @@ const SCENE_BACKDROP = `<svg class="scene-back" viewBox="0 0 400 300" preserveAs
   <circle cx="330" cy="52" r="46" fill="url(#scene-moon)"/><circle cx="330" cy="52" r="20" fill="#fff6d6"/>
   <path d="M0 196C60 150 120 150 180 186S300 160 400 190V300H0z" fill="url(#hill-far)"/>
   <path d="M0 232C80 190 150 214 220 226S340 196 400 222V300H0z" fill="url(#hill-near)"/>
-  <path d="M0 268C90 240 170 262 250 258S350 244 400 256V300H0z" fill="url(#hill-front)"/>
-</svg>`;
+  <path d="M0 268C90 240 170 262 250 258S350 244 400 256V300H0z" fill="url(#hill-front)"/>` },
+  { id: "space", name: "Space", art: `
+  <defs>${fade("deep", "#0d0a2e", "#2a1f6e", "#4a2f8a")}${fade("ground", "#8d86b8", "#5d5690")}
+    <radialGradient id="planet" cx="0.350" cy="0.300" r="0.800"><stop offset="0" stop-color="#ffb37a"/><stop offset="1" stop-color="#d9603f"/></radialGradient>
+    <radialGradient id="planet2" cx="0.350" cy="0.300" r="0.800"><stop offset="0" stop-color="#8fe3e8"/><stop offset="1" stop-color="#2f8fb0"/></radialGradient></defs>
+  <rect width="400" height="300" fill="url(#deep)"/>
+  ${dots([[30, 40, 1.4, 0.8], [70, 110, 1, 0.5], [120, 28, 1.2, 0.7], [165, 80, 1, 0.5], [210, 36, 1.5, 0.8], [250, 120, 1, 0.5], [300, 30, 1.2, 0.7], [352, 150, 1, 0.5], [380, 60, 1.3, 0.7], [20, 170, 1, 0.5], [140, 150, 1.1, 0.5], [230, 180, 1, 0.4]])}
+  <circle cx="318" cy="76" r="38" fill="url(#planet)"/><ellipse cx="318" cy="78" rx="62" ry="12" fill="none" stroke="#ffe0b0" stroke-width="5" transform="rotate(-16 318 78)"/>
+  <circle cx="70" cy="64" r="18" fill="url(#planet2)"/>
+  <path d="M0 240C70 214 150 232 220 226S340 214 400 232V300H0z" fill="url(#ground)"/>
+  <g fill="#4d4680" opacity="0.550"><ellipse cx="80" cy="262" rx="26" ry="7"/><ellipse cx="210" cy="276" rx="34" ry="8"/><ellipse cx="330" cy="258" rx="22" ry="6"/></g>` },
+  { id: "beach", name: "Beach", art: `
+  <defs>${fade("day", "#6ec3f5", "#bfe8fb", "#ffe9c2")}${fade("sea", "#3fb6d8", "#1f86b8")}${fade("sand", "#ffe2a6", "#f2c377")}
+    <radialGradient id="sunlight"><stop offset="0" stop-color="#fff3b0" stop-opacity="0.800"/><stop offset="1" stop-color="#fff3b0" stop-opacity="0"/></radialGradient></defs>
+  <rect width="400" height="300" fill="url(#day)"/>
+  <circle cx="86" cy="62" r="54" fill="url(#sunlight)"/><circle cx="86" cy="62" r="24" fill="#ffd95a"/>
+  <g fill="#ffffff" opacity="0.900"><ellipse cx="250" cy="52" rx="34" ry="12"/><ellipse cx="276" cy="44" rx="22" ry="12"/><ellipse cx="340" cy="92" rx="26" ry="9"/></g>
+  <rect y="170" width="400" height="70" fill="url(#sea)"/>
+  <path d="M0 184q25-8 50 0t50 0 50 0 50 0 50 0 50 0 50 0 50 0" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.500"/>
+  <path d="M0 232C80 214 160 236 240 226S340 216 400 228V300H0z" fill="url(#sand)"/>` },
+  { id: "stage", name: "Stage", art: `
+  <defs>${fade("hall", "#2a1140", "#4a1d5e")}${fade("curtain", "#d8455a", "#8f1f3c")}${fade("boards", "#c98a4e", "#8f5a2c")}
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c8" stop-opacity="0.550"/><stop offset="1" stop-color="#fff6c8" stop-opacity="0"/></linearGradient></defs>
+  <rect width="400" height="300" fill="url(#hall)"/>
+  <path d="M120 0L60 236h130z" fill="url(#beam)"/><path d="M280 0L210 236h130z" fill="url(#beam)"/>
+  <path d="M0 0h70c-6 80-22 160-30 232H0z" fill="url(#curtain)"/><path d="M400 0h-70c6 80 22 160 30 232h40z" fill="url(#curtain)"/>
+  <path d="M0 0h400v26c-34 16-66 16-100 0-34 16-66 16-100 0-34 16-66 16-100 0-34 16-66 16-100 0z" fill="#b8324c"/>
+  <path d="M0 232h400v68H0z" fill="url(#boards)"/>
+  <g stroke="#7a4a22" stroke-width="1.500" opacity="0.600"><path d="M0 254h400M0 278h400"/></g>` },
+];
+const backdrop = () => BACKDROPS.find((entry) => entry.id === state.backdrop) || BACKDROPS[0];
 
 // One sticker on the scene. It can be dragged with a finger or mouse, or
 // moved with the arrow keys. A tap picks it, so the buttons below act on it.
@@ -1102,7 +1139,7 @@ function sceneScreen() {
   const change = (next) => { update({ scene: next }); render(); };
 
   const board = el("div", { class: "scene" });
-  board.innerHTML = SCENE_BACKDROP;
+  board.innerHTML = `<svg class="scene-back" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${backdrop().art}</svg>`;
   board.append(...scene.map(placedSticker).filter(Boolean));
   // Tapping the picture itself lets go of the picked sticker.
   board.addEventListener("pointerdown", (event) => {
@@ -1122,6 +1159,12 @@ function sceneScreen() {
       : el("p", { class: "label scene-hint" }, scene.length > 0
           ? "Drag a sticker to move it. Tap one to make it bigger, smaller, or take it off."
           : "Tap a sticker below to put it on the picture."),
+    el("div", { class: "chips", role: "group", "aria-label": "Picture" }, BACKDROPS.map((entry) =>
+      el("button", {
+        class: `chip ${entry.id === backdrop().id ? "chip-on" : ""}`, type: "button",
+        "aria-pressed": String(entry.id === backdrop().id),
+        onClick: () => { update({ backdrop: entry.id }); render(); },
+      }, entry.name))),
     el("section", { class: "card" },
       el("h2", {}, "Your stickers"),
       mine.length === 0 && el("p", {}, "Open a gift to get your first sticker."),
