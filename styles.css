@@ -239,7 +239,7 @@ textarea, .text-input {
 .placed .hop { animation: hop 0.55s ease-out; }
 .placed-on { outline: 4px dashed #ffffff; outline-offset: 2px; }
 .scene-tools { margin-top: 0; }
-.scene-tools .btn { flex: 1 1 110px; }
+.scene-tools .btn { flex: 1 1 96px; padding-left: 10px; padding-right: 10px; }
 .btn-off { opacity: 0.450; }
 .scene-hint { min-height: 54px; display: flex; align-items: center; margin: 0; }
 .tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }

@@ -18,7 +18,7 @@ import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
 import { shortDate, summarize, dayLog, weekStreak, totals, recentWeeks } from "./history.js";
 import { goldenCount, prizeProgress } from "./prize.js";
 import { makeBackup, readBackup } from "./backup.js";
-import { MAX_ON_SCENE, MIN_SIZE, MAX_SIZE, addToScene, moveInScene, resizeInScene, removeFromScene } from "./scene.js";
+import { MAX_ON_SCENE, MIN_SIZE, MAX_SIZE, addToScene, moveInScene, resizeInScene, removeFromScene, flipInScene, turnInScene } from "./scene.js";
 import { SETS, ALL_STICKERS } from "../data/stickers.js";
 import { load, save } from "./storage.js";
 
@@ -550,7 +550,7 @@ function stickerArt(sticker, shiny) {
   const art = el("div", { class: `sticker ${shiny ? "sticker-shiny" : ""}` });
   art.innerHTML = `<svg viewBox="-6 -6 60 60" aria-hidden="true">`
     + (shiny ? `<circle class="shine" cx="24" cy="24" r="27"/>` : "")
-    + `<g filter="url(#sticker-look)">${sticker.art}</g>`
+    + `<g filter="url(#sticker-look)"><g class="art">${sticker.art}</g></g>`
     + (shiny ? sparkle(45, 3, 6) + sparkle(3, 40, 4.5) + sparkle(49, 36, 3) : "")
     + `</svg>`;
   return art;
@@ -1094,6 +1094,10 @@ function placedSticker(item) {
   node.style.left = `${item.x}%`;
   node.style.top = `${item.y}%`;
   node.style.width = `${SCENE_WIDTHS[item.size]}%`;
+  // Flip and turn go on the drawing inside its outline and shadow, so the
+  // light still comes from the top left. 24 24 is the middle of the drawing.
+  node.querySelector(".art").setAttribute("transform",
+    `rotate(${item.turn || 0} 24 24)${item.flip ? " translate(48 0) scale(-1 1)" : ""}`);
   if (picked) node.dataset.picked = "yes";
   if (item.key === sceneHop) { node.firstChild.classList.add("hop"); sceneHop = null; }
 
@@ -1158,9 +1162,11 @@ function sceneScreen() {
       ? el("div", { class: "row scene-tools" },
           button("Bigger", () => change(resizeInScene(scene, picked.key, 1)), picked.size >= MAX_SIZE ? "off" : "plain"),
           button("Smaller", () => change(resizeInScene(scene, picked.key, -1)), picked.size <= MIN_SIZE ? "off" : "plain"),
+          button("Flip", () => change(flipInScene(scene, picked.key))),
+          button("Turn", () => change(turnInScene(scene, picked.key))),
           button("Take off", () => { sceneSelected = null; change(removeFromScene(scene, picked.key)); }))
       : el("p", { class: "label scene-hint" }, scene.length > 0
-          ? "Drag a sticker to move it. Tap one to make it bigger, smaller, or take it off."
+          ? "Drag a sticker to move it. Tap one to resize, flip, or turn it, or to take it off."
           : "Tap a sticker below to put it on the picture."),
     el("div", { class: "chips", role: "group", "aria-label": "Picture" }, BACKDROPS.map((entry) =>
       el("button", {
