@@ -236,6 +236,7 @@ textarea, .text-input {
 .scene-back { position: absolute; inset: 0; width: 100%; height: 100%; }
 .placed { position: absolute; transform: translate(-50%, -50%); aspect-ratio: 1; padding: 0; border: none; background: none; border-radius: 50%; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .placed .sticker { width: 100%; height: 100%; pointer-events: none; }
+.placed .hop { animation: hop 0.55s ease-out; }
 .placed-on { outline: 4px dashed #ffffff; outline-offset: 2px; }
 .scene-tools { margin-top: 0; }
 .scene-tools .btn { flex: 1 1 110px; }
@@ -290,11 +291,12 @@ textarea:focus, .text-input:focus, .btn:focus-visible, .box-tap:focus-visible, .
 @keyframes fly { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--turn)); opacity: 0; } }
 @keyframes rays { 0% { transform: scale(0.2) rotate(-40deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
 @keyframes fall-far { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(700px) rotate(var(--turn)); opacity: 0; } }
+@keyframes hop { 0% { transform: translateY(0) rotate(0) scale(1); } 30% { transform: translateY(-22%) rotate(-8deg) scale(1.1); } 60% { transform: translateY(0) rotate(6deg) scale(0.96); } 80% { transform: translateY(-6%) rotate(-3deg); } 100% { transform: translateY(0) rotate(0) scale(1); } }
 @keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(520px) rotate(var(--turn)); opacity: 0; } }
 
 /* People who ask their device for less motion get none. */
 @media (prefers-reduced-motion: reduce) {
-  .gift-button .gift-art, .reveal .sticker, .box-pop, .bit, .spark, .big-star, .big-star .rays { animation: none; }
+  .gift-button .gift-art, .reveal .sticker, .box-pop, .bit, .spark, .big-star, .big-star .rays, .placed .hop { animation: none; }
   .gift-art .lid, .hold.holding .hold-fill { transition: none; }
 }
 

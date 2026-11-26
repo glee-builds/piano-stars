@@ -27,6 +27,7 @@ let state = load();
 let screen = "home";
 let justOpened = null; // what was inside the gift that was just opened
 let justChecked = null; // the item that was just checked, so its box can pop
+let sceneHop = null; // the key of a placed sticker that was just tapped, so it can hop once
 let sceneSelected = null; // the key of the sticker picked on the scene, if any
 let practiceOn = null; // an earlier day being recorded or changed; null means today
 const calmMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1094,6 +1095,7 @@ function placedSticker(item) {
   node.style.top = `${item.y}%`;
   node.style.width = `${SCENE_WIDTHS[item.size]}%`;
   if (picked) node.dataset.picked = "yes";
+  if (item.key === sceneHop) { node.firstChild.classList.add("hop"); sceneHop = null; }
 
   let drag = null;
   node.addEventListener("pointerdown", (event) => {
@@ -1111,9 +1113,10 @@ function placedSticker(item) {
   });
   const drop = () => {
     if (!drag) return;
-    const { x, y } = drag;
+    const { x, y, moved } = drag;
     drag = null;
     sceneSelected = item.key;
+    if (!moved) sceneHop = item.key; // a tap, not a drag
     update({ scene: moveInScene(state.scene, item.key, x, y) });
     render();
   };
@@ -1121,7 +1124,7 @@ function placedSticker(item) {
   node.addEventListener("pointercancel", drop);
   node.addEventListener("keydown", (event) => {
     const steps = { ArrowLeft: [-3, 0], ArrowRight: [3, 0], ArrowUp: [0, -3], ArrowDown: [0, 3] }[event.key];
-    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); sceneSelected = item.key; render(); return; }
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); sceneSelected = item.key; sceneHop = item.key; render(); return; }
     if (!steps) return;
     event.preventDefault();
     sceneSelected = item.key;
