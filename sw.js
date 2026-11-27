@@ -15,7 +15,9 @@
 // This only handles the app's own files. Practice data is stored
 // separately on the device and never passes through here.
 
-const CACHE = "piano-stars-v1";
+// Other apps on this web address keep their own caches under other prefixes.
+const PREFIX = "piano-stars-";
+const CACHE = PREFIX + "v1";
 
 // Every file the app needs, relative to this file. "./" is the app itself.
 const FILES = [
@@ -53,7 +55,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((names) => Promise.all(names.filter((name) => name !== CACHE).map((name) => caches.delete(name))))
+      .then((names) => Promise.all(names.filter((name) => name.startsWith(PREFIX) && name !== CACHE).map((name) => caches.delete(name))))
       .then(() => self.clients.claim())
   );
 });
